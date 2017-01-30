@@ -1,9 +1,8 @@
 # Catalog of Vitamain and Minerals in Food Sources
 
 ## Configuring the environment## 
-1. Clone this directory. You will need git installed.
 
-2. To install git.  If you dont have git already here is the link to install it:
+1. To install git.  If you dont have git already here is the link to install it:
 
 [link to git] https://git-scm.com/downloads
 
@@ -14,43 +13,43 @@ create a git respository; suggested name: vitamins
 
 [link to virtual box] https://www.virtualbox.org/wiki/Downloads
 
-2. Install vagrant. Vagrant has configurations which will configure the Virtual Box.
+3. Install vagrant. Vagrant has configurations which will configure the Virtual Box.
 
 [link to vagrant] https://www.vagrantup.com/downloads.html
 
 
-3. clone the github Virtual Machine configuration
+4. clone the github Virtual Machine configuration
 
 git clone https://github.com/lguadagna/fullstack-nanodegree-vm
 
-4. Vagrant up.
+5. Vagrant up.
 Cd to the /vagrant directory of cloned repository above. Type
 
 `vagrant up`
 
 This will run the configuration file pg_config.sh
 
-5. login to the virtual machine.
+6. login to the virtual machine.
 type:
 `vagrant ssh`
 After vagrant up completes, you will be in the /home/vagrant directory.
 
-6. Change to the shared directory: /vagrant. inside the virtual machine window type:
+7. Change to the shared directory: /vagrant. inside the virtual machine window type:
 
 `cd /vagrant`
 
 
-7. Create the database structure.
+8. Create the database structure.
 within the vm run:
 ` python database_setup.py`
 
-8. Add the initial entries to the database.
+9. Add the initial entries to the database.
 `python some_vitamins.py`
 
-9. startup the web server.
+10. startup the web server.
 `python finalproject.py`
 
-10. Access the project at:
+11. Access the project at:
 `http://localhost:5000`
 
 
