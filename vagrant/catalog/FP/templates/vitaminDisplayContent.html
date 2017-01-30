@@ -1,0 +1,43 @@
+{% extends 'base.html'  %}
+{% block content %}
+<!-- works -->
+<div id="works"  class=" clearfix grid">
+	
+			<h1>Nutrients</h1>
+			{% with messages = get_flashed_messages() %}
+			{% if messages %}
+          
+			 <ul>
+			{% for message in messages %}
+
+			<li> <strong> {{ message }} </strong> </li>
+			 {% endfor %}
+			 </ul>
+			 {% endif %}
+			{% endwith %}
+			
+			{% if authorized == 'true' %}
+			<a href="{{url_for('newVitamin')}}" > <h3> Add a New Nutrient </h3> </a>
+			{%  else  %}
+			<h4>(Login to Add a New Nutrient!)</h4> </a>
+			{%  endif  %}
+			{% for vitamin in vitamins %}
+			
+			<!--<a href = "{{url_for('showVitamin', vitamin_id = vitamin.id)}}"> <h2>{{vitamin.name}}</h2></a>-->
+
+			<figure class="effect-oscar wowload fadeIn">
+			<img src="../static/images/portfolio/{{vitamin.foodImageName }}" alt="img01"/>
+			<figcaption>
+				<h2> <a href= "{{url_for('showVitamin', vitamin_id = vitamin.id)}}" >{{vitamin.name}} </a></h2>
+				<p>{{vitamin.description}}<br>
+				{% if authorized == 'true' %}
+				<a href= "{{url_for('deleteVitamin', vitamin_id = vitamin.id)}}" >delete</a></p>            
+				{% endif %}
+			</figcaption>
+			</figure>
+				
+			{% endfor %}
+
+</div> 	
+
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends 'base.html'  %}
+
+{% block content %}
+<div id="works"  class=" clearfix grid">
+	<h1>{{ vitamin.name }}</h1>
+	<h2>{{vitamin.longDescription}}</h2>
+	{% with messages = get_flashed_messages() %}
+        {% if messages %}
+          
+        <ul>
+        {% for message in messages %}
+
+            <li> <strong> {{ message }} </strong> </li>
+        {% endfor %}
+        </ul>
+        {% endif %}
+    {% endwith %}
+
+    {% if items !=[] %}
+
+	<a href = "{{url_for('newFoodSource', vitamin_id = vitamin.id )}}">Create New Food Source</a>
+	</br></br>
+
+	<h2>Food sources</h2>
+
+		{% for i in items %}	
+		<figure class="effect-oscar">
+	
+		<h3>{{i.name}}
+	
+		- {{i.serving}}
+
+		 - {{i.amount}}</h3>
+		{% if authorized == 'true' %}
+		<a href='{{url_for('editFoodSource', vitamin_id = vitamin.id, food_id=i.id ) }}' >Edit</a>
+	        <a href='{{url_for('deleteFoodSource', vitamin_id = vitamin.id, food_id=i.id ) }}' >Delete</a>
+		{% endif %}
+</br>
+</br>
+		</figure>
+		{% endfor %}
+	
+		{% else %}
+		<p> You currently have no food sources <p>
+		<a href = "{{url_for('newFoodSource', vitamin_id = vitamin.id )}}">Create New Food Source</a>
+			{% endif %}
+</div> 
+{% endblock %}

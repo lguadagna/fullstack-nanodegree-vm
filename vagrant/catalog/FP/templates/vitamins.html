@@ -1,0 +1,39 @@
+<html>
+
+<head>
+<meta name="viewport" content="width-device-width, initial-scale=1">
+<link rel=stylesheet type=text/css href="{{ url_for('static', filename='styles.css') }}">
+	
+<link rel=stylesheet type=text/css href="{{ url_for('static', filename='bootstrap.css') }}">
+	</head>
+
+
+<body>
+<div class="row">
+<div class = 'col-md-1'></div>
+
+<div class = 'col-md-1 '></div>
+<div class = 'col-md-8  pic'>
+<h1>Vitamins</h1>
+
+<a href="{{url_for('newVitamin')}}" > <h3> Add a New Vitamin </h3> </a>
+
+{% for vitamin in vitamins %}
+
+<div class = 'container'>
+<a href = "{{url_for('showVitamin', vitamin_id = vitamin.id)}}"> <h2>{{vitamin.name}}</h2></a>
+
+<a href = "{{url_for('editVitamin',vitamin_id = vitamin.id)}}">Edit</a>
+
+<a href = "{{url_for('deleteVitamin',vitamin_id = vitamin.id)}}">Delete</a>
+</div>
+
+{% endfor %}
+
+</div>
+<div class = 'col-md-1 '></div>
+<div class = 'col-md-1 '></div>
+</div>
+</body>
+
+</html>

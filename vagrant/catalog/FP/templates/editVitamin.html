@@ -1,0 +1,23 @@
+{% extends 'base.html'  %}
+{% set active_page = vitamindisplaycontent %}
+{% block content %}
+
+<div id="works"  class=" clearfix grid">
+
+<h1> Edit Vitamin </h1>
+
+
+<form action="{{ url_for('editVitamin',  vitamin_id = vitamin.id)}}" method = 'post'>
+
+
+	<p>Name:</p>
+		<input type ='text' size='30' name='name' value='{{vitamin.name}}' placeholder = '{{vitamin.name }}'>
+
+
+<input type='submit' value='Edit'>
+
+
+<a href = '{{url_for('showVitamins')}}'> Cancel </a>
+
+</div>
+{% endblock %}
