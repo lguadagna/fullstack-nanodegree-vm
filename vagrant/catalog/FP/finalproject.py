@@ -97,11 +97,11 @@ def newVitamin():
     if 'username' not in login_session:
         return redirect('login')
     if request.method == 'POST':
-        print username
-        user_id = getUserIDbyusername(login_session['username'])
+        user = getUserInfo(login_session['user_id'])
+
         newvitamin = Vitamin(name=request.form['name'],
                              foodImageName="antioxidants.jpg",
-                             user_id=user_id)
+                             user_id=user.id)
         session.add(newvitamin)
         session.commit()
         # url_for looks for a function
@@ -264,7 +264,7 @@ def deleteFoodSource(vitamin_id, food_id):
 # User Helper Functions
 
 def createUser(login_session):
-    newUser = User(name=login_session['user_id'], email=login_session[
+    newUser = User(name=login_session['username'], email=login_session[
                    'email'], picture=login_session['picture'])
     session.add(newUser)
     session.commit()
