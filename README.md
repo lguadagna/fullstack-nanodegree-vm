@@ -1,4 +1,4 @@
-# Catalog of Vitamain and Minerals in Food Sources
+# Catalog of Vitamain and Minerals in Food Sources#
 
 ## Configuring the environment## 
 

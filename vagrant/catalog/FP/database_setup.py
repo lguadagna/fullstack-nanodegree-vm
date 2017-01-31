@@ -4,9 +4,10 @@ from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine
-# this is a good sql alchemy reference 
+# this is a good sql alchemy reference
 # http://bytefish.de/blog/first_steps_with_sqlalchemy/
 Base = declarative_base()
+
 
 class User(Base):
     __tablename__ = 'user'
@@ -14,7 +15,7 @@ class User(Base):
     name = Column(String(250), nullable=False)
     email = Column(String(250), nullable=False)
     picture = Column(String(250))
-    
+
     @property
     def serialize(self):
         """Return object data in easily serializeable format"""
@@ -23,8 +24,9 @@ class User(Base):
             'email': self.email,
             'picture': self.picture
         }
-print "created user" 
-   
+print "created user"
+
+
 class Vitamin(Base):
     __tablename__ = 'vitamin'
     id = Column(Integer, primary_key=True)
@@ -48,6 +50,7 @@ class Vitamin(Base):
 
 print "created vitamin"
 
+
 class FoodSource(Base):
     __tablename__ = 'foodSource'
 
@@ -59,7 +62,7 @@ class FoodSource(Base):
     vitamin_id = Column(Integer, ForeignKey('vitamin.id'))
     vitamin = relationship(Vitamin)
     user_id = Column(Integer, ForeignKey('user.id'))
-    user = relationship(User)   
+    user = relationship(User)
 
     @property
     def serialize(self):

@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, redirect, jsonify, url_for, flash
+from flask import Flask, render_template, request, \
+    redirect, jsonify, url_for, flash
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from database_setup import Base, Vitamin, FoodSource, User
@@ -8,14 +9,16 @@ from flask import session as login_session
 import random
 import string
 
-#imports for client Secret manipulation
+# imports for client Secret manipulation
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
 import httplib2
 import json
 from flask import make_response
 import requests
-
+# this is to use the login function decorator
+from functools import wraps
+import sys
 
 app = Flask(__name__)
 
@@ -33,7 +36,7 @@ session = DBSession()
 
 @app.route('/vitamin/<int:vitamin_id>/food/JSON')
 def vitaminfoodJSON(vitamin_id):
-    vitamin = session.query(vitamin).filter_by(id=vitamin_id).one()
+    vitamin = session.query(Vitamin).filter_by(id=vitamin_id).one()
     items = session.query(FoodSource).filter_by(
         vitamin_id=vitamin_id).all()
     return jsonify(FoodSources=[i.serialize for i in items])
@@ -47,29 +50,25 @@ def FoodSourceJSON(vitamin_id, food_id):
 
 @app.route('/vitamin/JSON')
 def vitaminsJSON():
-    vitamins = session.query(vitamin).all()
+    vitamins = session.query(Vitamin).all()
     return jsonify(vitamins=[r.serialize for r in vitamins])
 
-# Show all vitamins
-@app.route('/showvitaminboxes')
-# def showVitaminboxes():
-#     vitamins = session.query(Vitamin).all()
-#     # return "This page will show all vitamins"
-#     return render_template('index.html', vitamins=vitamins)
+# Decorators in flask!
+# http://flask.pocoo.org/docs/0.10/patterns/viewdecorators/
 
-# Show all vitamins
-# @app.route('/base')
-# def base():
-#     vitamins = session.query(Vitamin).all()
-#     # return "This page will show all vitamins"
-#     return render_template('base.html', vitamins=vitamins)
 
-# This was example from FB developers page 
-@app.route('/FB_login')
-def googleAPI():
-    return render_template('FB_login.html')
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'email' in login_session:
+            return f(*args, **kwargs)
+        else:
+            flash("You are not allowed to access that feature!")
+            return redirect('/login')
+    return decorated_function
 
-### MAIN HOME PAGE ### 
+
+# MAIN HOME PAGE #
 @app.route('/')
 @app.route('/vitamindisplaycontent')
 def vitamindisplaycontent():
@@ -78,8 +77,10 @@ def vitamindisplaycontent():
     isAuthorized = 'true'
     if 'username' not in login_session:
         isAuthorized = 'false'
-    return render_template('vitaminDisplayContent.html', vitamins=vitamins, authorized=isAuthorized)
-   
+    return render_template('vitaminDisplayContent.html',
+                           vitamins=vitamins, authorized=isAuthorized)
+
+
 # Create anti-forgery state token
 @app.route('/login')
 def showLogin():
@@ -90,27 +91,20 @@ def showLogin():
     return render_template('login.html', STATE=state)
 
 
-# Show all vitamins- old ugly page 
-#@app.route('/')
-@app.route('/vitamin/')
-def showVitamins():
-    vitamins = session.query(Vitamin).all()
-    # return "This page will show all vitamins"
-    return render_template('vitamins.html', vitamins=vitamins)
-
-
 # Create a new vitamin
 @app.route('/vitamin/new/', methods=['GET', 'POST'])
 def newVitamin():
     if 'username' not in login_session:
         return redirect('login')
     if request.method == 'POST':
-        user_id=getUserIDbyusername(login_session['username'] )
-        newvitamin = Vitamin(name=request.form['name'], foodImageName="antioxidants.jpg", 
-        user_id = user_id )
+        print username
+        user_id = getUserIDbyusername(login_session['username'])
+        newvitamin = Vitamin(name=request.form['name'],
+                             foodImageName="antioxidants.jpg",
+                             user_id=user_id)
         session.add(newvitamin)
         session.commit()
-        # url_for looks for a function 
+        # url_for looks for a function
         return redirect(url_for('vitamindisplaycontent'))
     else:
         return render_template('newVitamin.html')
@@ -118,17 +112,18 @@ def newVitamin():
 
 
 # Edit a vitamin
+@login_required
 @app.route('/vitamin/<int:vitamin_id>/edit/', methods=['GET', 'POST'])
 def editVitamin(vitamin_id):
-    if 'username' not in login_session:
-        return redirect('login')
-    
+    # if 'username' not in login_session:
+    #     return redirect('login')
+
     editedvitamin = session.query(
         Vitamin).filter_by(id=vitamin_id).one()
     if editedvitamin.user_id != login_session['user_id']:
         flash("you can not edit this vitamin because you did not create it")
         return redirect(url_for('vitamindisplaycontent'))
-  
+
     if request.method == 'POST':
         if request.form['name']:
             editedvitamin.name = request.form['name']
@@ -141,17 +136,18 @@ def editVitamin(vitamin_id):
 
 
 # Delete a vitamin
+@login_required
 @app.route('/vitamin/<int:vitamin_id>/delete/', methods=['GET', 'POST'])
 def deleteVitamin(vitamin_id):
-    if 'username' not in login_session:
-        return redirect('login')
+    # if 'username' not in login_session:
+    #     return redirect('login')
 
     vitaminToDelete = session.query(
         Vitamin).filter_by(id=vitamin_id).one()
     if vitaminToDelete.user_id != login_session['user_id']:
         flash("you can not delete this vitamin because you did not create it")
         return redirect(url_for('vitamindisplaycontent'))
-        
+
     if request.method == 'POST':
         session.delete(vitaminToDelete)
         session.commit()
@@ -173,47 +169,52 @@ def showVitamin(vitamin_id):
     isAuthorized = 'true'
     if 'username' not in login_session:
         isAuthorized = 'false'
-    return render_template('vitamin.html', items=items, vitamin=vitamin, authorized=isAuthorized)
+    return render_template('vitamin.html', items=items, vitamin=vitamin,
+                           authorized=isAuthorized)
     # return 'This page is the food for vitamin %s' % vitamin_id
 
 
 # Create a new food item
+@login_required
 @app.route(
     '/vitamin/<int:vitamin_id>/food/new/', methods=['GET', 'POST'])
 def newFoodSource(vitamin_id):
-    if 'username' not in login_session:
-        return redirect('login')
- 
+    # if 'username' not in login_session:
+    #     return redirect('login')
+    print "New Food..."
+
     if request.method == 'POST':
-        user_id=getUserIDbyusername(login_session['username'] )
-        
-        newItem = FoodSource(name=request.form['name'], description=request.form[
-                           'description'], serving=request.form['serving'], amount=request.form['amount'], vitamin_id=vitamin_id, user_id=user_id)
+        user = getUserInfo(login_session['user_id'])
+        newItem = FoodSource(name=request.form['name'], description=request.form
+                             ['description'], serving=request.form['serving'],
+                             amount=request.form['amount'],
+                             vitamin_id=vitamin_id, user_id=user.id)
         session.add(newItem)
         session.commit()
         vitamin = session.query(Vitamin).filter_by(id=vitamin_id).one()
         return redirect(url_for('showVitamin', vitamin_id=vitamin_id))
     else:
         vitamin = session.query(Vitamin).filter_by(id=vitamin_id).one()
-        return render_template('newFoodSource.html', vitamin_id=vitamin_id, vitamin=vitamin)
-
+        return render_template('newFoodSource.html', vitamin_id=vitamin_id,
+                               vitamin=vitamin)
     return render_template('newFoodSource.html', vitamin_id=vitamin_id, vitamin=vitamin)
     # return 'This page is for making a new FoodSource for vitamin %s'
     # %vitamin_id
 
 
 # Edit a food item
+@login_required
 @app.route('/vitamin/<int:vitamin_id>/food/<int:food_id>/edit',
            methods=['GET', 'POST'])
 def editFoodSource(vitamin_id, food_id):
-    if 'username' not in login_session:
-        return redirect('login')
+    # if 'username' not in login_session:
+    #     return redirect('login')
 
     editedItem = session.query(FoodSource).filter_by(id=food_id).one()
     if editedItem.user_id != login_session['user_id']:
         flash("you can not edit this vitamin because you did not create it")
         return redirect(url_for('showVitamin', vitamin_id=vitamin_id))
-    
+
     if request.method == 'POST':
         if request.form['name']:
             editedItem.name = request.form['name']
@@ -223,45 +224,47 @@ def editFoodSource(vitamin_id, food_id):
             editedItem.amount = request.form['serving']
         if request.form['amount']:
             editedItem.amount = request.form['amount']
-   
+
         session.add(editedItem)
         session.commit()
         return redirect(url_for('showVitamin', vitamin_id=vitamin_id))
     else:
         vitamin = session.query(Vitamin).filter_by(id=vitamin_id).one()
         return render_template(
-            'editFoodSource.html', vitamin=vitamin, vitamin_id=vitamin_id, food_id=food_id, item=editedItem)
+            'editFoodSource.html', vitamin=vitamin, vitamin_id=vitamin_id,
+            food_id=food_id, item=editedItem)
 
     # return 'This page is for editing food item %s' % food_id
 
 # Delete a food item
 
 
+@login_required
 @app.route('/vitamin/<int:vitamin_id>/food/<int:food_id>/delete',
            methods=['GET', 'POST'])
 def deleteFoodSource(vitamin_id, food_id):
-    if 'username' not in login_session:
-        return redirect('login')
+    # if 'username' not in login_session:
+    #     return redirect('login')
 
     itemToDelete = session.query(FoodSource).filter_by(id=food_id).one()
     if itemToDelete.user_id != login_session['user_id']:
         flash("you can not delete this vitamin because you did not create it")
         return redirect(url_for('showVitamin', vitamin_id=vitamin_id))
-        
+
     if request.method == 'POST':
         session.delete(itemToDelete)
         session.commit()
         return redirect(url_for('showVitamin', vitamin_id=vitamin_id))
     else:
-        return render_template('deleteFoodSource.html', vitamin_id=vitamin_id, item=itemToDelete)
+        return render_template('deleteFoodSource.html',
+                               vitamin_id=vitamin_id, item=itemToDelete)
     # return "This page is for deleting food item %s" % food_id
 
 
 # User Helper Functions
 
-
 def createUser(login_session):
-    newUser = User(name=login_session['username'], email=login_session[
+    newUser = User(name=login_session['user_id'], email=login_session[
                    'email'], picture=login_session['picture'])
     session.add(newUser)
     session.commit()
@@ -281,9 +284,10 @@ def getUserID(email):
     except:
         return None
 
+
 def getUserIDbyusername(username):
     try:
-        user = session.query(User).filter_by(username=username).one()
+        user = session.query(User).filter_by(username=name).one()
         return user.id
     except:
         return None
@@ -309,10 +313,10 @@ def disconnect():
         return redirect(url_for('vitamindisplaycontent'))
     else:
         flash("You were not logged in")
-    return 
+    return
 
 
-#http://sean.lyn.ch/2011/07/android-the-facebook-sdk-sso-and-you/
+# http://sean.lyn.ch/2011/07/android-the-facebook-sdk-sso-and-you/
 
 @app.route('/fbconnect', methods=['POST'])
 def fbconnect():
@@ -327,7 +331,8 @@ def fbconnect():
         'web']['app_id']
     app_secret = json.loads(
         open('fb_client_secrets.json', 'r').read())['web']['app_secret']
-    url = 'https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=%s&client_secret=%s&fb_exchange_token=%s' % (
+    url = 'https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&\
+        client_id=%s&client_secret=%s&fb_exchange_token=%s' % (
         app_id, app_secret, access_token)
     h = httplib2.Http()
     result = h.request(url, 'GET')[1]
@@ -337,13 +342,12 @@ def fbconnect():
     # strip expire tag from access token
     token = result.split("&")[0]
 
-
     url = 'https://graph.facebook.com/v2.4/me?%s&fields=name,id,email' % token
     h = httplib2.Http()
     result = h.request(url, 'GET')[1]
     # hote that failed because of app secret proof. Either set proof to no or include
     # sha 256 hash w/ request
-    print "url sent for API access:%s"% url
+    print "url sent for API access:%s" % url
     print "API JSON result: %s" % result
     data = json.loads(result)
     login_session['provider'] = 'facebook'
@@ -351,7 +355,9 @@ def fbconnect():
     login_session['email'] = data["email"]
     login_session['facebook_id'] = data["id"]
 
-    # The token must be stored in the login_session in order to properly logout, let's strip out the information before the equals sign in our token
+    # The token must be stored in the login_session in order to properly
+    # logout, let's strip out the information before the equals sign in our
+    # token
     stored_token = token.split("=")[1]
     login_session['access_token'] = stored_token
 
@@ -376,8 +382,11 @@ def fbconnect():
     output += '!</h1>'
     output += '<img src="'
     output += login_session['picture']
-    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
-
+    output += ' " style = "width: 300px \
+        height: 300px \
+        border-radius:  150px \
+       -webkit-border-radius: 150px \
+        -moz-border-radius: 150px "> '
     flash("Now logged in as %s" % login_session['username'])
     return output
 
@@ -387,14 +396,11 @@ def fbdisconnect():
     facebook_id = login_session['facebook_id']
     # The access token must me included to successfully logout
     access_token = login_session['access_token']
-    url = 'https://graph.facebook.com/%s/permissions?access_token=%s' % (facebook_id,access_token)
+    url = 'https://graph.facebook.com/%s/permissions?access_token=%s' % (
+        facebook_id, access_token)
     h = httplib2.Http()
     result = h.request(url, 'DELETE')[1]
     return "you have been logged out"
-
-
-
-
 
 
 # gconnect
@@ -485,12 +491,11 @@ def gconnect():
     output += '!</h1>'
     output += '<img src="'
     output += login_session['picture']
-    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
+    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;\
+        -webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
     flash("you are now logged in as %s" % login_session['username'])
     print "done!"
     return output
-
-
 
 
 @app.route('/gdisconnect')
@@ -514,11 +519,9 @@ def gdisconnect():
         return response
 
 
-
-
-
 if __name__ == '__main__':
     app.secret_key = 'LetFoodBeThyMedicine'
     app.debug = True
-    # threaded = true suggested as solution for slow localhost response, threaded=True, sql error
-    app.run(host='0.0.0.0', port=5000 )
+    # threaded = true suggested as solution for slow localhost response,
+    # threaded=True, sql error
+    app.run(host='0.0.0.0', port=5000)
