@@ -17,7 +17,6 @@ create a git respository; suggested name: vitamins
 
 [link to vagrant] https://www.vagrantup.com/downloads.html
 
-
 4. clone the github Virtual Machine configuration
 
 git clone https://github.com/lguadagna/fullstack-nanodegree-vm
